@@ -72,3 +72,88 @@ commands will detect it and remind you to do so if necessary.
 vaivailx@MacBook-Pro-2 terraformer %
 ```
 
+とやっていって、ドキュメントを読み進めたら、パッケージマネージャでインストールできるらしい。
+
+* Homebrew: brew install terraformer
+* Chocolatey: choco install terraformer
+
+あとはリリースされたバイナリをダウンロードと言う手段もあるとのこと。
+Linuxならばリリースされたバイナリダウンロード、それ以外ならパッケージマネージャが便利かな。
+
+brewでもインストールしたら簡単で早かった。
+
+0.8.14が入っている。
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % terraformer version
+Terraformer v0.8.14
+vaivailx@MacBook-Pro-2 terraformer %
+```
+
+## 実行お試し
+
+まずはプロバイダ指定だけで実行してみる。
+
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % terraformer import aws
+2021/06/20 15:37:18 required flag(s) "resources" not set
+```
+
+resources指定は必須とのこと。
+今はIAM以外はとくに設定していないため、IAMを指定して実行する。
+
+
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % terraformer import aws --resources=iam
+2021/06/20 15:42:21 aws importing default region
+2021/06/20 15:42:24 aws importing... iam
+2021/06/20 15:42:25 operation error IAM: ListUsers, https response error StatusCode: 403, RequestID: 04cd4328-7f30-4ca0-9eab-76d602dfc343, api error AccessDenied: User: arn:aws:iam::682816909333:user/keisuke_yamanaka_personal is not authorized to perform: iam:ListUsers on resource: arn:aws:iam::682816909333:user/
+
+...
+```
+
+ずっとエラーがで続ける。
+タイムアウトは自動でされないの？と思ったが、オプションであった。
+
+```zsh
+  -n, --retry-number          number of retries to perform if refresh fails
+  -m, --retry-sleep-ms        time in ms to sleep between retries
+```
+
+がすくなくともこれはアクセス権限のエラーでは関係しないよう。
+以下のオプション指定をしても変わらずエラーが出続けた。
+
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % terraformer import aws --resources=iam -n3 -m3
+```
+
+あらためて、十分な権限を付与したユーザーのアクセスキーを発行して、実行
+
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % terraformer import aws --resources=iam -n3 -m3
+
+...
+
+2021/06/20 20:41:00 Filtered number of resources for service iam: 35
+2021/06/20 20:41:00 aws Connecting....
+2021/06/20 20:41:00 aws save iam
+2021/06/20 20:41:00 aws save tfstate for iam
+vaivailx@MacBook-Pro-2 terraformer %
+```
+
+generatedディレクトリが作成されて、terraformのファイルも作成されている。
+
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % lsd -l ./generated/aws/iam
+.rwxr-xr-x vaivailx staff 173 B  Sun Jun 20 20:41:00 2021  iam_group.tf
+.rwxr-xr-x vaivailx staff 696 B  Sun Jun 20 20:41:00 2021  iam_group_policy_attachment.tf
+.rwxr-xr-x vaivailx staff 188 B  Sun Jun 20 20:41:00 2021  iam_instance_profile.tf
+.rwxr-xr-x vaivailx staff 5.9 KB Sun Jun 20 20:41:00 2021  iam_role.tf
+.rwxr-xr-x vaivailx staff 3.0 KB Sun Jun 20 20:41:00 2021  iam_role_policy_attachment.tf
+.rwxr-xr-x vaivailx staff 591 B  Sun Jun 20 20:41:00 2021  iam_user.tf
+.rwxr-xr-x vaivailx staff 305 B  Sun Jun 20 20:41:00 2021  iam_user_group_membership.tf
+.rwxr-xr-x vaivailx staff 381 B  Sun Jun 20 20:41:00 2021  iam_user_policy_attachment.tf
+.rwxr-xr-x vaivailx staff 6.1 KB Sun Jun 20 20:41:00 2021  outputs.tf
+.rwxr-xr-x vaivailx staff 100 B  Sun Jun 20 20:41:00 2021  provider.tf
+.rwxr-xr-x vaivailx staff  52 KB Sun Jun 20 20:41:00 2021  terraform.tfstate
+vaivailx@MacBook-Pro-2 terraformer %
+```
