@@ -157,3 +157,17 @@ vaivailx@MacBook-Pro-2 terraformer % lsd -l ./generated/aws/iam
 .rwxr-xr-x vaivailx staff  52 KB Sun Jun 20 20:41:00 2021  terraform.tfstate
 vaivailx@MacBook-Pro-2 terraformer %
 ```
+
+terraformerでimportしたあとにterraform planすると差分がでると聞いていた気がするので試した。
+
+```zsh
+vaivailx@MacBook-Pro-2 terraformer % terraform plan
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration
+and found no differences, so no changes are needed.
+vaivailx@MacBook-Pro-2 terraformer %
+```
+
+でないね。iamはわりとシンプルに定義できるからだろうか？
